@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Smart Residence IoT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { slate: {50:'#f8fafc',800:'#1e293b',900:'#0f172a'}, emerald: {500:'#10b981'}, rose: {500:'#f43f5e'} } } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .loader { border: 2px solid #f3f3f3; border-top: 2px solid #ffffff; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center px-4">
+
+    <div class="max-w-sm w-full bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+        <!-- Header -->
+        <div class="bg-slate-900 p-8 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 mb-4 border border-emerald-500/30">
+                <i class="fa-solid fa-shield-halved text-xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white tracking-tight">Smart Residence</h2>
+            <p class="text-slate-400 text-xs mt-2 uppercase tracking-widest">Admin Access Only</p>
+        </div>
+
+        <!-- Form -->
+        <div class="p-8">
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Email Administrator</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                        <input type="email" id="email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="admin@smartres.com" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div id="error-msg" class="hidden bg-rose-50 text-rose-600 text-xs p-3 rounded-lg border border-rose-100 flex items-center">
+                    <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                    <span id="error-text">Login gagal.</span>
+                </div>
+
+                <button type="submit" id="btn-login" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition duration-300 shadow-lg shadow-slate-900/20 flex justify-center items-center gap-2">
+                    <span>Masuk Dashboard</span>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <a href="public-display.html" class="text-xs text-slate-400 hover:text-emerald-600 transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> Kembali ke Layar Publik
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // Config Firebase (Sama seperti file lain)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqDNjxb9SeDzB8WUj0GIzvZQPcj_CmjZM",
+            authDomain: "smart-residence-iot.firebaseapp.com",
+            databaseURL: "https://smart-residence-iot-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "smart-residence-iot",
+            storageBucket: "smart-residence-iot.firebasestorage.app",
+            messagingSenderId: "354143267738",
+            appId: "1:354143267738:web:abb4f68406c6905b6f2823"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const form = document.getElementById('login-form');
+        const btn = document.getElementById('btn-login');
+        const errorMsg = document.getElementById('error-msg');
+        const errorText = document.getElementById('error-text');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // UI Loading
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader"></div> Memverifikasi...';
+            errorMsg.classList.add('hidden');
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // Sukses
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Berhasil!';
+                btn.classList.replace('bg-slate-900', 'bg-emerald-500');
+                
+                // Simpan sesi sederhana (opsional, Firebase handle otomatis)
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1000);
+
+            } catch (error) {
+                // Gagal
+                console.error(error);
+                btn.disabled = false;
+                btn.innerHTML = 'Masuk Dashboard';
+                errorMsg.classList.remove('hidden');
+                
+                switch(error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential':
+                        errorText.innerText = "Email atau password salah.";
+                        break;
+                    case 'auth/too-many-requests':
+                        errorText.innerText = "Terlalu banyak percobaan. Coba lagi nanti.";
+                        break;
+                    default:
+                        errorText.innerText = "Terjadi kesalahan koneksi.";
+                }
+            }
+        });
+    </script>
+</body>
+</html>

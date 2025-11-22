@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Diagnostic - Smart Residence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>tailwind.config = { theme: { extend: { colors: { slate: {50:'#f8fafc',800:'#1e293b'} } } } }</script>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #1e293b; color: #cbd5e1; }
+        .panel { background: #0f172a; border: 1px solid #334155; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+        .val-change { animation: highlight 0.5s ease; }
+        @keyframes highlight { 0% { color: #4ade80; } 100% { color: inherit; } }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+        <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-stethoscope mr-2"></i>DIAGNOSTIC DASHBOARD</h1>
+        <div class="text-xs text-right">
+            <div id="auth-status" class="text-red-400">AUTH: CHECKING...</div>
+            <div id="conn-status" class="text-slate-400">FIREBASE: CONNECTING...</div>
+        </div>
+    </div>
+
+    <!-- LOG CONSOLE (Untuk melihat event realtime) -->
+    <div class="panel h-32 overflow-y-auto text-xs font-mono mb-6" id="system-log">
+        <div class="text-slate-500">--- System Log Initialized ---</div>
+    </div>
+
+    <!-- GRID 3 UNIT -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        
+        <!-- UNIT: KAMAR 1 -->
+        <div class="panel border-l-4 border-blue-500">
+            <h2 class="text-lg font-bold text-blue-400 mb-2">KAMAR 1 (Master)</h2>
+            
+            <!-- Realtime Section -->
+            <div class="mb-4">
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: Realtime (monitoring/)</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Guest:</div><div id="k1-r-guest" class="text-white font-bold">-</div>
+                    <div>Watt:</div><div id="k1-r-watt" class="text-yellow-400">0</div>
+                    <div>Relay 1:</div><div id="k1-r-r1">-</div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: History Bundle</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Avg Watt:</div><div id="k1-h-watt">0</div>
+                    <div>Est kWh:</div><div id="k1-h-kwh">0</div>
+                    <div>Est Cost:</div><div id="k1-h-cost" class="text-green-400">Rp 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UNIT: VILLA 1 -->
+        <div class="panel border-l-4 border-emerald-500">
+            <h2 class="text-lg font-bold text-emerald-400 mb-2">VILLA 1</h2>
+            
+            <div class="mb-4">
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: Realtime</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Guest:</div><div id="v1-r-guest" class="text-white font-bold">-</div>
+                    <div>Watt:</div><div id="v1-r-watt" class="text-yellow-400">0</div>
+                    <div>Status:</div><div id="v1-r-status">-</div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: History Bundle</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Avg Watt:</div><div id="v1-h-watt">0</div>
+                    <div>Est kWh:</div><div id="v1-h-kwh">0</div>
+                    <div>Est Cost:</div><div id="v1-h-cost" class="text-green-400">Rp 0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UNIT: VILLA 2 -->
+        <div class="panel border-l-4 border-purple-500">
+            <h2 class="text-lg font-bold text-purple-400 mb-2">VILLA 2</h2>
+            
+            <div class="mb-4">
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: Realtime</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Guest:</div><div id="v2-r-guest" class="text-white font-bold">-</div>
+                    <div>Watt:</div><div id="v2-r-watt" class="text-yellow-400">0</div>
+                    <div>Status:</div><div id="v2-r-status">-</div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-bold text-slate-500 uppercase border-b border-slate-700 mb-2">Source: History Bundle</h3>
+                <div class="grid grid-cols-2 text-sm gap-y-1">
+                    <div>Avg Watt:</div><div id="v2-h-watt">0</div>
+                    <div>Est kWh:</div><div id="v2-h-kwh">0</div>
+                    <div>Est Cost:</div><div id="v2-h-cost" class="text-green-400">Rp 0</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOTAL SUMMARY ROW -->
+    <div class="panel border border-slate-500">
+        <h2 class="text-lg font-bold text-white mb-2 text-center">TOTAL AKUMULASI (Live Calc)</h2>
+        <div class="grid grid-cols-4 text-center divide-x divide-slate-700">
+            <div>
+                <p class="text-xs text-slate-400">Tot. Beban</p>
+                <p class="text-xl font-bold text-yellow-400" id="tot-watt">0 W</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400">Tot. Arus</p>
+                <p class="text-xl font-bold text-blue-400" id="tot-amp">0 A</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400">Tot. Energi</p>
+                <p class="text-xl font-bold text-white" id="tot-kwh">0 kWh</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-400">Tot. Biaya</p>
+                <p class="text-xl font-bold text-green-400" id="tot-cost">Rp 0</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqDNjxb9SeDzB8WUj0GIzvZQPcj_CmjZM",
+            authDomain: "smart-residence-iot.firebaseapp.com",
+            databaseURL: "https://smart-residence-iot-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "smart-residence-iot",
+            storageBucket: "smart-residence-iot.firebasestorage.app",
+            messagingSenderId: "354143267738",
+            appId: "1:354143267738:web:abb4f68406c6905b6f2823"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        let currentTariff = 1444.70;
+
+        // --- LOGGING UTILS ---
+        function sysLog(msg) {
+            const log = document.getElementById('system-log');
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.innerText = `[${time}] ${msg}`;
+            log.prepend(div);
+        }
+
+        function updateVal(id, val) {
+            const el = document.getElementById(id);
+            if(el) {
+                el.innerText = val;
+                el.classList.remove('val-change');
+                void el.offsetWidth; // trigger reflow
+                el.classList.add('val-change');
+            }
+        }
+
+        // --- AUTH & INIT ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                document.getElementById('auth-status').innerText = "AUTH: NOT LOGGED IN";
+                window.location.href = 'login.html';
+            } else {
+                document.getElementById('auth-status').innerText = "AUTH: OK (" + user.email + ")";
+                document.getElementById('auth-status').className = "text-green-400";
+                initListeners();
+            }
+        });
+
+        function initListeners() {
+            sysLog("Initializing Listeners...");
+
+            // 1. MONITORING LISTENER (Realtime)
+            onValue(ref(db, 'monitoring'), (snap) => {
+                const data = snap.val();
+                document.getElementById('conn-status').innerText = "FIREBASE: CONNECTED";
+                document.getElementById('conn-status').className = "text-green-400";
+
+                if(data) {
+                    sysLog("Data Realtime Diterima");
+                    // Update K1
+                    updateVal('k1-r-guest', data.kamar1?.guestName || '-');
+                    updateVal('k1-r-watt', (data.kamar1?.watt || 0) + ' W');
+                    updateVal('k1-r-r1', data.kamar1?.relays?.[0]?.state ? 'ON' : 'OFF');
+                    
+                    // Update V1
+                    updateVal('v1-r-guest', data.villa1?.guestName || '-');
+                    updateVal('v1-r-watt', (data.villa1?.watt || 0) + ' W');
+
+                    // Update V2
+                    updateVal('v2-r-guest', data.villa2?.guestName || '-');
+                    updateVal('v2-r-watt', (data.villa2?.watt || 0) + ' W');
+                } else {
+                    sysLog("Data Realtime Kosong (NULL)");
+                }
+            }, (error) => {
+                sysLog("ERROR REALTIME: " + error.message);
+            });
+
+            // 2. HISTORY LISTENER (Bundle)
+            const q = query(ref(db, 'history/master'), limitToLast(3000));
+            sysLog("Fetching History (Limit 3000)...");
+            
+            onValue(q, (snap) => {
+                const data = snap.val();
+                if(data) {
+                    const count = Object.keys(data).length;
+                    sysLog(`History Bundle Diterima: ${count} records`);
+                    processHistoryBundle(data);
+                } else {
+                    sysLog("History Kosong!");
+                }
+            });
+
+            // 3. TARIF
+            onValue(ref(db, 'config/tariff'), (s) => { 
+                if(s.val()) { 
+                    currentTariff = parseFloat(s.val()); 
+                    sysLog("Tarif Update: " + currentTariff);
+                } 
+            });
+            
+            // 4. SYSTEM ALERTS
+            onValue(ref(db, 'system_alerts'), (s) => {
+                const d = s.val();
+                if(d && d.active) sysLog(`ALERT TRIGGERED: ${d.type} - ${d.message}`);
+            });
+        }
+
+        // --- LOGIKA HITUNG MURNI ---
+        function processHistoryBundle(rawData) {
+            const arr = Object.values(rawData).sort((a,b)=>a.ts-b.ts);
+            
+            // Filter Hari Ini
+            const now = new Date();
+            const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+            const todayData = arr.filter(d => (d.ts||0) >= startToday);
+
+            sysLog(`Data Hari Ini: ${todayData.length} titik`);
+
+            const sum = { w:0, i:0, kwh:0, cost:0 };
+
+            ['kamar1', 'villa1', 'villa2'].forEach(uid => {
+                // Extract specific unit data
+                // Hati-hati: d[uid] bisa undefined jika data rusak
+                const validData = todayData.filter(d => d[uid] && d[uid].watt > 0).map(d => d[uid]);
+
+                // Hitung Rerata Watt
+                let avgWatt = 0;
+                if(validData.length > 0) {
+                    const totalW = validData.reduce((acc, curr) => acc + (curr.watt||0), 0);
+                    avgWatt = totalW / validData.length;
+                }
+
+                // Hitung Turunan
+                const kwhDay = (avgWatt * 24) / 1000;
+                const costMonth = kwhDay * 30 * currentTariff;
+
+                // Update UI Unit
+                const prefix = uid === 'kamar1' ? 'k1' : (uid === 'villa1' ? 'v1' : 'v2');
+                updateVal(`${prefix}-h-watt`, avgWatt.toFixed(1) + " W");
+                updateVal(`${prefix}-h-kwh`, kwhDay.toFixed(2) + " kWh");
+                updateVal(`${prefix}-h-cost`, "Rp " + costMonth.toLocaleString('id-ID', {maximumFractionDigits:0}));
+
+                // Akumulasi Total
+                sum.w += avgWatt;
+                sum.kwh += kwhDay;
+                sum.cost += costMonth;
+                
+                // Ampere (Asumsi sederhana dari Watt / 220)
+                sum.i += (avgWatt / 220); 
+            });
+
+            // Update Total Panel
+            updateVal('tot-watt', sum.w.toFixed(0) + " W");
+            updateVal('tot-amp', sum.i.toFixed(1) + " A");
+            updateVal('tot-kwh', sum.kwh.toFixed(2) + " kWh");
+            updateVal('tot-cost', "Rp " + sum.cost.toLocaleString('id-ID', {maximumFractionDigits:0}));
+        }
+
+    </script>
+</body>
+</html>

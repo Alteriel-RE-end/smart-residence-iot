@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Villa 2 - Smart Residence IoT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+    <script>tailwind.config = { theme: { extend: { colors: { slate: {50:'#f8fafc',100:'#f1f5f9',800:'#1e293b'}, emerald: {500:'#10b981'}, rose: {500:'#f43f5e'} } } } }</script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-wrapper { position: relative; height: 300px; width: 100%; }
+        .res-btn-active { background-color: #1e293b; color: white; border-color: #1e293b; }
+        .res-btn-inactive { background-color: #f8fafc; color: #64748b; border-color: #cbd5e1; }
+        #auth-loading { position: fixed; inset: 0; background: #f8fafc; z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        #global-alert { position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; transform: translateY(-100%); transition: transform 0.3s ease-in-out; }
+        .alert-visible { transform: translateY(0) !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <div id="auth-loading"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div></div>
+    <div id="global-alert" class="shadow-lg text-white"></div>
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <!-- HEADER -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+            <div class="bg-emerald-600 p-6 flex flex-col md:flex-row justify-between items-center text-white">
+                <div class="flex items-center gap-4 mb-4 md:mb-0">
+                    <div class="bg-white/10 p-3 rounded-xl backdrop-blur-sm"><i class="fa-solid fa-house-chimney text-2xl"></i></div>
+                    <div><h1 class="text-2xl font-bold">Villa 2</h1><p class="text-emerald-100 text-sm font-bold" id="connection-status">Connecting...</p></div>
+                </div>
+                
+                <!-- MODIFIED: Ditambahkan ID status-card untuk manipulasi warna -->
+                <div id="status-card" class="text-center md:text-right bg-white/10 p-3 rounded-lg backdrop-blur-sm border border-white/20 transition-all duration-500">
+                    <div class="text-xs text-white/80 uppercase font-bold mb-1">Status Hunian</div>
+                    <div class="text-2xl font-bold text-white" id="header-status">--</div>
+                    <div class="text-sm text-white/90" id="header-guest">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOP SECTION (INFO & BIAYA) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- KARTU 1: NODE INFO -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center">
+                <h3 class="font-bold text-slate-800 text-lg mb-2"><i class="fa-solid fa-server mr-2 text-slate-400"></i> Node Info</h3>
+                <p class="text-sm text-slate-500 mb-4">Sensor Node pasif. Memonitor parameter listrik tanpa kontrol relay.</p>
+                <div class="flex items-center gap-2 text-xs text-slate-400"><span class="bg-emerald-100 text-emerald-600 px-2 py-1 rounded font-bold">Online</span></div>
+            </div>
+
+            <!-- KARTU 2: ESTIMASI BIAYA LENGKAP -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg"><i class="fa-solid fa-coins mr-2 text-yellow-500"></i> Est. Biaya</h3>
+                        <p class="text-xs text-slate-400">Proyeksi 30 Hari</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="resetAllZooms()" class="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded text-slate-600 transition" title="Reset Zoom"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <div class="flex gap-1">
+                            <button onclick="changeResolution(1)" id="btn-res-1" class="res-btn-active px-3 py-1 rounded border text-xs font-bold transition">1M</button>
+                            <button onclick="changeResolution(10)" id="btn-res-10" class="res-btn-inactive px-3 py-1 rounded border text-xs font-bold transition">10M</button>
+                            <button onclick="changeResolution(60)" id="btn-res-60" class="res-btn-inactive px-3 py-1 rounded border text-xs font-bold transition">1J</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center flex-grow">
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold mb-1">Basis Hari Ini</p>
+                        <div class="flex items-baseline gap-1 mb-2">
+                            <span class="text-sm text-slate-500 font-medium">Rp</span>
+                            <span class="text-4xl font-bold text-slate-800" id="cost-monthly-now">0</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                             <!-- ID INI YANG BENAR -->
+                             <div id="cost-monthly-trend-badge" class="text-xs font-bold text-slate-400">Loading...</div>
+                             <span class="text-[10px] text-slate-400">vs Kemarin</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-50 rounded-lg p-4 text-xs border border-slate-100">
+                        <div class="flex justify-between mb-2 pb-2 border-b border-slate-200">
+                            <span class="text-slate-500">Basis Hari Ini:</span>
+                            <span class="font-bold text-slate-700" id="cost-basis-today">0 kWh</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Est. via Rerata Kemarin:</span>
+                            <span class="font-bold text-slate-700" id="cost-monthly-yest">Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div id="charts-container" class="space-y-8"></div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqDNjxb9SeDzB8WUj0GIzvZQPcj_CmjZM",
+            authDomain: "smart-residence-iot.firebaseapp.com",
+            databaseURL: "https://smart-residence-iot-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "smart-residence-iot",
+            storageBucket: "smart-residence-iot.firebasestorage.app",
+            messagingSenderId: "354143267738",
+            appId: "1:354143267738:web:abb4f68406c6905b6f2823"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        const unitId = 'villa2'; // UNIT VILLA 2
+
+        const P_LIMIT = 50; 
+        const HISTORY_FETCH_LIMIT = 3000; 
+        
+        let charts = {};
+        let currentTariff = 1444.70;
+        let currentResolution = 1; 
+        let lastHistorySnapshot = null; // MODIFIED: Menyimpan snapshot history
+
+        // Helper
+        function getTrendHTML(diff, pct) {
+            if(diff > 0) return `<span class="text-rose-500 font-bold">↑ ${Math.abs(pct).toFixed(1)}%</span>`;
+            if(diff < 0) return `<span class="text-emerald-500 font-bold">↓ ${Math.abs(pct).toFixed(1)}%</span>`;
+            return `<span class="text-slate-400">-</span>`;
+        }
+        function formatRupiahFull(n) { return "Rp " + n.toLocaleString('id-ID',{maximumFractionDigits:0}); }
+
+        // FIX: KEY 'watt'
+        const metrics = [
+            { key: 'watt', label: 'Daya Aktif', unit: 'W', color: '#10b981', icon: 'fa-bolt' },
+            { key: 'v', label: 'Tegangan', unit: 'V', color: '#f59e0b', icon: 'fa-plug' },
+            { key: 'i', label: 'Arus', unit: 'A', color: '#f43f5e', icon: 'fa-wave-square' },
+            { key: 'kwh', label: 'Energi Total', unit: 'kWh', color: '#475569', icon: 'fa-battery-full' },
+            { key: 'hz', label: 'Frekuensi', unit: 'Hz', color: '#64748b', icon: 'fa-timeline' },
+            { key: 'pf', label: 'Power Factor', unit: '', color: '#94a3b8', icon: 'fa-chart-line' }
+        ];
+
+        onAuthStateChanged(auth, (user) => {
+            const loading = document.getElementById('auth-loading');
+            if (!user) window.location.href = 'login.html';
+            else {
+                if(loading) loading.style.display = 'none';
+                initCharts(); 
+                initListeners(); 
+            }
+        });
+
+        document.getElementById('navbar-container').innerHTML = `<nav class="bg-white shadow-sm border-b sticky top-0 z-40"><div class="max-w-7xl mx-auto px-4 h-auto md:h-16 flex flex-col md:flex-row items-center justify-between py-2 md:py-0"><div class="flex items-center mb-2 md:mb-0 w-full md:w-auto justify-center md:justify-start"><i class="fa-solid fa-network-wired text-slate-800 text-xl mr-3"></i><a href="index.html" class="font-bold text-xl text-slate-900">SmartRes<span class="text-slate-400">IoT</span></a></div><div class="flex gap-2 overflow-x-auto w-full md:w-auto justify-center md:justify-end pb-1 md:pb-0 no-scrollbar"><a href="index.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Dashboard</a><a href="kamar1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kamar 1</a><a href="villa1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 1</a><a href="villa2.html" class="bg-slate-800 text-white px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 2</a><a href="manage.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kartu</a></div></div></nav>`;
+
+        onValue(ref(db, 'system_alerts'), (snap) => {
+            const alertData = snap.val();
+            const alertBox = document.getElementById('global-alert');
+            if (alertData && alertData.active) {
+                let bgClass = alertData.type === 'gas' ? "bg-purple-600" : "bg-rose-600";
+                let iconClass = alertData.type === 'gas' ? "fa-skull-crossbones" : "fa-triangle-exclamation";
+                alertBox.className = `${bgClass} text-white shadow-lg alert-visible fixed top-0 left-0 w-full z-50 transition-transform duration-300`;
+                alertBox.innerHTML = `<div class="px-4 py-4 flex justify-between items-center max-w-7xl mx-auto"><div class="flex items-center animate-pulse"><i class="fa-solid ${iconClass} text-3xl mr-4"></i><div><p class="font-bold uppercase tracking-wide text-sm">ALERT SYSTEM</p><p class="text-lg font-medium">${alertData.message}</p></div></div><button onclick="window.dismissAlert()" class="bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 text-sm font-bold transition">Tutup & Reset</button></div>`;
+            } else {
+                alertBox.className = "fixed top-0 left-0 w-full z-50 transition-transform duration-300 transform -translate-y-full";
+            }
+        });
+        window.dismissAlert = () => set(ref(db, 'system_alerts/active'), false);
+
+        function initCharts() {
+            document.getElementById('charts-container').innerHTML = metrics.map(m => `
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                    <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-white p-2 rounded-lg border border-slate-200 shadow-sm"><i class="fa-solid ${m.icon}" style="color: ${m.color}"></i></div>
+                            <div><h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider">${m.label}</h4><div class="flex items-baseline gap-2"><span class="text-2xl font-bold text-slate-800" id="val-${m.key}">0</span><span class="text-sm font-medium text-slate-400">${m.unit}</span></div></div>
+                        </div>
+                        <div class="hidden sm:flex gap-8 text-right">
+                            <div><p class="text-[10px] text-slate-400 uppercase font-bold">Rerata Hari Ini</p><p class="text-sm font-bold text-slate-700" id="avg-today-${m.key}">--</p></div>
+                            <div><p class="text-[10px] text-slate-400 uppercase font-bold">Rerata Kemarin</p><p class="text-sm font-bold text-slate-500" id="avg-yest-${m.key}">--</p></div>
+                            <div><p class="text-[10px] text-slate-400 uppercase font-bold">Selisih</p><div id="trend-${m.key}"><span class="text-sm text-slate-400">-</span></div></div>
+                        </div>
+                    </div>
+                    <div class="p-4"><div class="chart-wrapper"><canvas id="chart-${m.key}"></canvas></div></div>
+                    <div class="sm:hidden bg-slate-50 border-t border-slate-100 p-3 grid grid-cols-3 divide-x divide-slate-200 text-center">
+                         <div><p class="text-[9px] text-slate-400 uppercase">Hari Ini</p><p class="text-xs font-bold text-slate-700" id="avg-today-mob-${m.key}">--</p></div>
+                         <div><p class="text-[9px] text-slate-400 uppercase">Kemarin</p><p class="text-xs font-bold text-slate-500" id="avg-yest-mob-${m.key}">--</p></div>
+                         <div><p class="text-[9px] text-slate-400 uppercase">Selisih</p><div id="trend-mob-${m.key}"><span class="text-xs text-slate-400">-</span></div></div>
+                    </div>
+                </div>`).join('');
+
+            metrics.forEach(m => {
+                const ctx = document.getElementById(`chart-${m.key}`).getContext('2d');
+                charts[m.key] = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: m.label, data: [], borderColor: m.color, backgroundColor: m.color+'1A', borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { x: { display: true, grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { beginAtZero: true, grid: { color: '#f1f5f9' } } },
+                        plugins: { 
+                            legend: { display: false }, 
+                            zoom: { zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x', limits: { x: { minRange: 300000 } } }, pan: { enabled: true, mode: 'x' } } 
+                        }
+                    }
+                });
+            });
+        }
+        
+        function aggregateData(dataArray, intervalMinutes) {
+            const aggregated = [];
+            const now = Math.floor(Date.now() / 1000);
+            const intervalSeconds = intervalMinutes * 60;
+            const latestSnap = Math.floor(now / intervalSeconds) * intervalSeconds;
+
+            for (let i = 0; i < P_LIMIT; i++) {
+                const bucketEnd = latestSnap - (i * intervalSeconds);
+                const bucketStart = bucketEnd - intervalSeconds;
+                const chunk = dataArray.filter(d => d.ts > bucketStart && d.ts <= bucketEnd);
+                const point = { time: new Date(bucketEnd * 1000).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) };
+
+                metrics.forEach(m => {
+                    if (chunk.length === 0) point[m.key] = 0;
+                    else if (currentResolution === 1) point[m.key] = chunk[chunk.length - 1][m.key];
+                    else {
+                        let sum = 0; let count = 0;
+                        chunk.forEach(d => { const val = d[m.key] || 0; if (val > 0) { sum += val; count++; } });
+                        point[m.key] = count > 0 ? (sum / count) : 0;
+                    }
+                });
+                aggregated.unshift(point);
+            }
+            return aggregated;
+        }
+
+        function processFirebaseHistory(snapshot) {
+            const rawHistory = snapshot.val();
+            if (!rawHistory) return;
+            
+            const dataArr = Object.values(rawHistory).map(d => ({
+                ts: d.ts || 0,
+                ...d[unitId] 
+            })).sort((a, b) => a.ts - b.ts);
+
+            const aggregatedData = aggregateData(dataArr, currentResolution);
+            const labels = aggregatedData.map(d => d.time);
+
+            const now = new Date();
+            const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+            const startYesterday = startToday - 86400;
+            const todayData = dataArr.filter(d => d.ts >= startToday);
+            const yestData = dataArr.filter(d => d.ts >= startYesterday && d.ts < startToday);
+            const calcAvg = (arr, key) => {
+                const valid = arr.map(d => d[key]||0).filter(v => v > 0);
+                return valid.length > 0 ? valid.reduce((a,b)=>a+b,0)/valid.length : 0;
+            };
+
+            metrics.forEach(m => {
+                charts[m.key].data.labels = labels;
+                charts[m.key].data.datasets[0].data = aggregatedData.map(d => d[m.key]);
+                charts[m.key].update('none');
+
+                const avgToday = calcAvg(todayData, m.key);
+                const avgYest = calcAvg(yestData, m.key);
+                const diff = avgToday - avgYest; 
+                const pct = avgYest > 0 ? ((diff / avgYest) * 100) : 0;
+
+                // UPDATE HEADER STATS (SAFETY CHECK)
+                const elToday = document.getElementById(`avg-today-${m.key}`);
+                const elYest = document.getElementById(`avg-yest-${m.key}`);
+                const elTrend = document.getElementById(`trend-${m.key}`);
+
+                if(elToday) elToday.innerText = avgToday.toFixed(1) + " " + m.unit;
+                if(elYest) elYest.innerText = avgYest.toFixed(1) + " " + m.unit;
+                if(elTrend) elTrend.innerHTML = getTrendHTML(diff, pct);
+                
+                // UPDATE MOBILE STATS
+                const mobAvg = document.getElementById(`avg-today-mob-${m.key}`); if(mobAvg) mobAvg.innerText = avgToday.toFixed(1);
+                const mobAvgYest = document.getElementById(`avg-yest-mob-${m.key}`); if(mobAvgYest) mobAvgYest.innerText = avgYest.toFixed(1);
+                const mobTrend = document.getElementById(`trend-mob-${m.key}`); if(mobTrend) mobTrend.innerHTML = getTrendHTML(diff, pct);
+
+                // UPDATE COST (FIXED ID: cost-monthly-trend-badge)
+                if(m.key === 'kwh') {
+                    const estCostToday = avgToday * 30 * currentTariff;
+                    const estCostYest = avgYest * 30 * currentTariff;
+                    document.getElementById('cost-monthly-now').innerText = formatRupiahFull(estCostToday);
+                    document.getElementById('cost-monthly-yest').innerText = formatRupiahFull(estCostYest);
+                    document.getElementById('cost-basis-today').innerText = avgToday.toFixed(2) + " kWh/hari";
+                    const diffCost = estCostToday - estCostYest;
+                    const pctCost = estCostYest > 0 ? (diffCost / estCostYest) * 100 : 0;
+                    
+                    const badge = document.getElementById('cost-monthly-trend-badge');
+                    if(badge) {
+                        const color = diffCost > 0 ? 'text-rose-500' : 'text-emerald-500';
+                        const icon = diffCost > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                        badge.innerHTML = `<span class="${color} font-bold"><i class="fa-solid ${icon}"></i> ${Math.abs(pctCost).toFixed(1)}%</span>`;
+                    }
+                }
+            });
+        }
+        
+        const historyQuery = query(ref(db, 'history/master'), limitToLast(HISTORY_FETCH_LIMIT));
+
+        function initListeners() {
+            // MODIFIED: Menyimpan data history ke variabel agar bisa dipakai ulang saat tarif berubah
+            onValue(historyQuery, (snap) => {
+                lastHistorySnapshot = snap;
+                processFirebaseHistory(snap);
+            });
+
+            // MODIFIED: Listener 'users' untuk status hunian
+            onValue(ref(db, 'users'), (snap) => {
+                const users = snap.val() || {};
+                let guestName = "--";
+                let isOccupied = false;
+
+                Object.values(users).forEach(user => {
+                    if (user.currentLocation && user.currentLocation !== "-") {
+                        // Normalisasi: "Villa 2" -> "villa2"
+                        let locKey = user.currentLocation.toLowerCase().replace(/\s/g, '');
+                        if (locKey === unitId) {
+                            guestName = user.name;
+                            isOccupied = true;
+                        }
+                    }
+                });
+
+                document.getElementById('header-status').innerText = isOccupied ? "OCCUPIED" : "AVAILABLE";
+                document.getElementById('header-guest').innerText = isOccupied ? guestName : "--";
+
+                // MODIFIED: Warna status hunian dinamis (Hijau/Merah)
+                const statusCard = document.getElementById('status-card');
+                if (isOccupied) {
+                    statusCard.className = "text-center md:text-right bg-rose-500 p-3 rounded-lg backdrop-blur-sm border border-rose-400 shadow-lg transition-all duration-500";
+                } else {
+                    statusCard.className = "text-center md:text-right bg-emerald-500 p-3 rounded-lg backdrop-blur-sm border border-emerald-400 shadow-lg transition-all duration-500";
+                }
+            });
+
+            onValue(ref(db, `monitoring/${unitId}`), (snap) => {
+                const data = snap.val(); if(!data) return;
+                document.getElementById('connection-status').innerText = "Terhubung";
+                // Tidak mengambil guestName dari monitoring, melainkan users
+                metrics.forEach(m => {
+                    const val = data[m.key] !== undefined ? data[m.key] : (data[m.key === 'watt' ? 'w' : m.key] || 0);
+                    document.getElementById(`val-${m.key}`).innerText = parseFloat(val).toFixed(m.key==='kwh'?3:1);
+                });
+            });
+            
+            // MODIFIED: Trigger ulang perhitungan biaya jika tarif berubah
+            onValue(ref(db, 'config/tariff'), (s) => { 
+                if(s.val()) {
+                    currentTariff = parseFloat(s.val());
+                    console.log("New Tariff:", currentTariff);
+                    // Jika data history sudah ada, hitung ulang langsung
+                    if(lastHistorySnapshot) processFirebaseHistory(lastHistorySnapshot);
+                }
+            });
+        }
+
+        window.changeResolution = (res) => { 
+            currentResolution = res; 
+            ['1','10','60'].forEach(r => document.getElementById(`btn-res-${r}`).className = parseInt(r)===res ? "res-btn-active px-2 py-1 rounded border text-[10px] font-bold" : "res-btn-inactive px-2 py-1 rounded border text-[10px] font-bold"); 
+            onValue(historyQuery, processFirebaseHistory, {onlyOnce: true});
+        };
+        window.resetAllZooms = () => Object.values(charts).forEach(c => c.resetZoom());
+
+        initCharts();
+    </script>
+</body>
+</html>

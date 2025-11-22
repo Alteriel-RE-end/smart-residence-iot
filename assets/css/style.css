@@ -1,0 +1,25 @@
+/* Fix Alert agar muncul di atas segalanya */
+#global-alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999; /* Angka harus tinggi */
+    transform: translateY(-100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.alert-visible {
+    transform: translateY(0) !important;
+}
+
+.alert-hidden {
+    transform: translateY(-100%) !important;
+}
+
+/* Agar grafik responsive tapi tidak gepeng */
+.chart-container {
+    position: relative;
+    height: 350px; /* Tinggi fix agar enak dilihat */
+    width: 100%;
+}

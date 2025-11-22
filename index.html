@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Smart Residence IoT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>tailwind.config = { theme: { extend: { colors: { slate: {50:'#f8fafc',800:'#1e293b'}, emerald: {500:'#10b981'}, rose: {500:'#f43f5e'} } } } }</script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #auth-loading { position: fixed; inset: 0; background: #f8fafc; z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        #global-alert { position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; transition: transform 0.3s ease-in-out; }
+        .alert-visible { transform: translateY(0) !important; }
+        .input-clean { background: transparent; border-bottom: 2px solid #e2e8f0; outline: none; transition: border-color 0.3s; }
+        .input-clean:focus { border-color: #0f172a; }
+        .trend-up-bad { color: #f43f5e; } .trend-down-good { color: #10b981; } .trend-neutral { color: #94a3b8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <div id="auth-loading"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div></div>
+    <div id="navbar-container"></div>
+    <div id="global-alert" class="bg-rose-600 text-white shadow-lg transform -translate-y-full"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Executive Overview</h1>
+                <p class="text-slate-500 text-sm mt-1">Analisa Performa Total (Rumus: Rata-rata Absolut)</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="public-display.html" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50"><i class="fa-solid fa-tv mr-2"></i> Layar Publik</a>
+                <button onclick="logout()" class="bg-rose-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-rose-700"><i class="fa-solid fa-right-from-bracket mr-2"></i> Logout</button>
+            </div>
+        </div>
+
+        <!-- GRID SUMMARY -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="bg-slate-800 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+                    <h3 class="text-white font-bold text-lg"><i class="fa-solid fa-chart-pie mr-2"></i> Total Akumulasi (3 Unit)</h3>
+                    <span id="data-status" class="text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded">Waiting...</span>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100 flex-grow items-center">
+                    
+                    <!-- BEBAN -->
+                    <div class="px-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Beban (W)</p>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-watt-now">0</span></div>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-400">Kemarin</span><span class="text-sm font-semibold text-slate-500" id="total-watt-prev">0</span></div>
+                        <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-watt-trend">--</span></div>
+                    </div>
+
+                    <!-- ARUS -->
+                    <div class="px-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Arus (A)</p>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-amp-now">0</span></div>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-400">Kemarin</span><span class="text-sm font-semibold text-slate-500" id="total-amp-prev">0</span></div>
+                        <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-amp-trend">--</span></div>
+                    </div>
+
+                    <!-- ENERGI -->
+                    <div class="px-2">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Energi (kWh)</p>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-kwh-now">0</span></div>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-400">Kemarin</span><span class="text-sm font-semibold text-slate-500" id="total-kwh-prev">0</span></div>
+                        <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-kwh-trend">--</span></div>
+                    </div>
+
+                    <!-- BIAYA -->
+                    <div class="px-2 bg-emerald-50/50 rounded-lg -my-2 py-2 border border-emerald-100/50">
+                        <p class="text-[10px] font-bold text-emerald-600 uppercase mb-3">Tot. Est. Biaya/Bln</p>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Basis Hari Ini</span><span class="text-lg font-bold text-emerald-600" id="total-cost-now">0</span></div>
+                        <div class="flex justify-between items-end"><span class="text-xs text-slate-400">Ref. Kemarin</span><span class="text-xs font-semibold text-slate-500" id="total-cost-prev">0</span></div>
+                        <div class="pt-2 border-t border-emerald-100/50 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-cost-trend">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIG -->
+            <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="bg-slate-100 px-5 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="text-slate-700 font-bold text-sm"><i class="fa-solid fa-coins mr-2 text-yellow-500"></i> Tarif Listrik</h3><span class="text-[10px] text-slate-400 uppercase font-bold">Config</span></div>
+                <div class="p-5 flex flex-col justify-center flex-grow"><label class="text-xs text-slate-400 mb-1 block">Harga per kWh (Rp)</label><div class="flex items-end gap-2 mb-4"><input type="number" id="input-tariff" class="input-clean w-full text-xl font-bold text-slate-800 pb-1" placeholder="1444"><span class="text-sm text-slate-400 pb-1">/kWh</span></div><button onclick="saveTariff()" id="btn-save-tariff" class="w-full bg-slate-800 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-slate-700 transition shadow-sm flex justify-center items-center"><i class="fa-solid fa-save mr-2"></i> Simpan Tarif</button></div>
+                <div class="px-5 pb-5 pt-0"><button onclick="cleanupData()" id="btn-cleanup" class="w-full border border-rose-200 text-rose-500 hover:bg-rose-50 text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-2 text-xs"><i class="fa-solid fa-trash-can"></i> Pangkas Data (>5000)</button></div>
+            </div>
+        </div>
+
+        <!-- UNIT CARDS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" id="unit-cards-container"></div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, query, limitToLast, get, orderByKey, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyDqDNjxb9SeDzB8WUj0GIzvZQPcj_CmjZM", authDomain: "smart-residence-iot.firebaseapp.com", databaseURL: "https://smart-residence-iot-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "smart-residence-iot", storageBucket: "smart-residence-iot.firebasestorage.app", messagingSenderId: "354143267738", appId: "1:354143267738:web:abb4f68406c6905b6f2823" };
+        const app = initializeApp(firebaseConfig); const db = getDatabase(app); const auth = getAuth(app);
+        let currentTariff = 1444.70;
+
+        // DATA BUFFER
+        let historyData = null;
+        let realtimeData = { kamar1: {}, villa1: {}, villa2: {} };
+        let occupancyData = { kamar1: null, villa1: null, villa2: null };
+
+        onAuthStateChanged(auth, (u) => { 
+            if (!u) window.location.href = 'login.html'; 
+            else { document.getElementById('auth-loading').style.display = 'none'; initApp(); }
+        });
+        window.logout = () => signOut(auth).then(() => window.location.href = 'login.html');
+        
+        document.getElementById('navbar-container').innerHTML = `<nav class="bg-white shadow-sm border-b sticky top-0 z-40"><div class="max-w-7xl mx-auto px-4 h-auto md:h-16 flex flex-col md:flex-row items-center justify-between py-2 md:py-0"><div class="flex items-center mb-2 md:mb-0 w-full md:w-auto justify-center md:justify-start"><i class="fa-solid fa-network-wired text-slate-800 text-xl mr-3"></i><a href="index.html" class="font-bold text-xl text-slate-900">SmartRes<span class="text-slate-400">IoT</span></a></div><div class="flex gap-2 overflow-x-auto w-full md:w-auto justify-center md:justify-end pb-1 md:pb-0 no-scrollbar"><a href="index.html" class="bg-slate-800 text-white px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Dashboard</a><a href="kamar1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kamar 1</a><a href="villa1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 1</a><a href="villa2.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 2</a><a href="manage.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kartu</a></div></div></nav>`;
+
+        const formatRupiah = (n) => "Rp " + n.toLocaleString('id-ID',{maximumFractionDigits:0});
+        const getTrendHTML = (diff, pct) => diff > 0 ? `<span class="trend-up-bad">↑ ${Math.abs(pct).toFixed(0)}%</span>` : (diff < 0 ? `<span class="trend-down-good">↓ ${Math.abs(pct).toFixed(0)}%</span>` : `<span class="text-slate-400">-</span>`);
+
+        function getValueSafe(obj, key) {
+            if (!obj) return 0;
+            if (key === 'watt') return parseFloat(obj.watt || obj.w || 0);
+            if (key === 'i') return parseFloat(obj.i || obj.A || 0);
+            if (key === 'kwh') return parseFloat(obj.kwh || obj.E || 0);
+            return parseFloat(obj[key] || 0);
+        }
+
+        function calcAvg(dataArr, unitId, key) {
+            const valid = dataArr.map(d => d[unitId] ? getValueSafe(d[unitId], key) : 0).filter(v => v > 0);
+            if(valid.length === 0) return 0;
+            return valid.reduce((a,b)=>a+b,0) / valid.length;
+        }
+
+        function initApp() {
+            onValue(ref(db, 'config/tariff'), (s) => { 
+                if(s.val()) { 
+                    currentTariff = parseFloat(s.val()); 
+                    document.getElementById('input-tariff').value = currentTariff; 
+                    console.log("Tarif updated:", currentTariff);
+                    renderUI(); 
+                } 
+            });
+            
+            onValue(ref(db, 'monitoring'), (snap) => {
+                const d = snap.val();
+                if(d) { realtimeData = d; renderUI(); }
+            });
+            
+            const q = query(ref(db, 'history/master'), limitToLast(3000));
+            onValue(q, (snap) => {
+                const val = snap.val();
+                if(val) { historyData = val; renderUI(); }
+                else document.getElementById('data-status').innerText = "No History";
+            });
+            
+            // MODIFIED: LOGIKA MAPPING USERS YANG LEBIH ROBUST
+            onValue(ref(db, 'users'), (snap) => {
+                const users = snap.val() || {};
+                
+                // Reset Occupancy
+                occupancyData = { kamar1: null, villa1: null, villa2: null };
+                
+                // Iterasi semua user untuk mencari yang sedang check-in
+                Object.values(users).forEach(user => {
+                    if (user.currentLocation && user.currentLocation !== "-") {
+                        // Normalisasi string lokasi: "Villa 2" -> "villa2"
+                        let locKey = user.currentLocation.toLowerCase().replace(/\s/g, '');
+                        
+                        // Pastikan key valid (kamar1, villa1, villa2)
+                        if (occupancyData.hasOwnProperty(locKey)) {
+                            occupancyData[locKey] = user.name;
+                        }
+                    }
+                });
+                renderUI();
+            });
+            
+            onValue(ref(db, 'system_alerts'), (snap) => {
+                const d = snap.val(); const b = document.getElementById('global-alert');
+                if(d?.active) {
+                    let c = d.type==='gas'?'bg-purple-600':'bg-rose-600';
+                    b.className=`${c} text-white shadow-lg alert-visible fixed top-0 left-0 w-full z-50 transition-transform duration-300`;
+                    b.innerHTML=`<div class="px-4 py-4 flex justify-between items-center max-w-7xl mx-auto"><div><p class="font-bold uppercase text-sm">ALERT</p><p class="text-lg font-medium">${d.message}</p></div><button onclick="window.dismissAlert()" class="bg-white/20 hover:bg-white/30 rounded-lg px-4 py-2 text-sm font-bold">Tutup</button></div>`;
+                } else { b.className = "fixed top-0 transform -translate-y-full"; }
+            });
+        }
+        window.dismissAlert = () => set(ref(db, 'system_alerts/active'), false);
+        window.cleanupData = async () => { if(confirm("Hapus history lama (>5000)?")) { const s = await get(query(ref(db,'history/master'), orderByKey())); const k=Object.keys(s.val()||{}); if(k.length>5000){ const u={}; for(let i=0;i<k.length-5000;i++)u[`history/master/${k[i]}`]=null; await update(ref(db),u); alert("Selesai"); } else alert("Data aman."); } };
+
+        function renderUI() {
+            let arr = [];
+            let useHistory = false;
+            if (historyData) { arr = Object.values(historyData).sort((a,b)=>a.ts-b.ts); useHistory = arr.length > 0; }
+
+            document.getElementById('data-status').innerText = useHistory ? "Source: History" : "Source: Realtime";
+            document.getElementById('data-status').className = useHistory ? "text-xs text-emerald-100 bg-emerald-600 px-2 py-1 rounded" : "text-xs text-rose-100 bg-rose-500 px-2 py-1 rounded";
+            
+            const now = new Date();
+            const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+            const startYesterday = startToday - 86400;
+            const todayArr = arr.filter(d => (d.ts||0) >= startToday);
+            const yestArr = arr.filter(d => (d.ts||0) >= startYesterday && (d.ts||0) < startToday);
+
+            const sum = { w:{t:0,y:0}, i:{t:0,y:0}, kwh:{t:0,y:0}, cost:{t:0,y:0} };
+            let cardsHTML = '';
+
+            ['kamar1', 'villa1', 'villa2'].forEach(uid => {
+                let wT = 0, wY = 0, iT = 0, iY = 0, kwhT = 0, kwhY = 0;
+
+                if (useHistory && todayArr.length > 0) {
+                    wT = calcAvg(todayArr, uid, 'watt');
+                    wY = calcAvg(yestArr, uid, 'watt');
+                    iT = calcAvg(todayArr, uid, 'i');
+                    iY = calcAvg(yestArr, uid, 'i');
+                    kwhT = calcAvg(todayArr, uid, 'kwh');
+                    kwhY = calcAvg(yestArr, uid, 'kwh');
+                }
+                
+                if (wT === 0 && realtimeData[uid]) wT = getValueSafe(realtimeData[uid], 'watt');
+                if (iT === 0 && realtimeData[uid]) iT = getValueSafe(realtimeData[uid], 'i');
+                if (kwhT === 0 && realtimeData[uid]) kwhT = getValueSafe(realtimeData[uid], 'kwh');
+
+                const costT = kwhT * 30 * currentTariff;
+                const costY = kwhY * 30 * currentTariff;
+
+                sum.w.t += wT; sum.w.y += wY;
+                sum.i.t += iT; sum.i.y += iY;
+                sum.kwh.t += kwhT; sum.kwh.y += kwhY;
+                sum.cost.t += costT; sum.cost.y += costY;
+
+                const diffW = wT - wY; const pctW = wY>0 ? (diffW/wY)*100 : 0;
+                const diffI = iT - iY; const pctI = iY>0 ? (diffI/iY)*100 : 0;
+                const diffK = kwhT - kwhY; const pctK = kwhY>0 ? (diffK/kwhY)*100 : 0;
+                const diffC = costT - costY; const pctC = costY>0 ? (diffC/costY)*100 : 0;
+
+                // MODIFIED: LOGIKA STATUS & WARNA YANG ROBUST
+                let statusLabel = "AVAILABLE";
+                let statusClass = "text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold";
+                let guestName = "-";
+
+                // Cek mapping occupancyData (dari node users)
+                if (occupancyData[uid]) { 
+                    statusLabel = "OCCUPIED"; 
+                    statusClass = "text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold"; 
+                    guestName = occupancyData[uid]; // Menampilkan Nama Tamu
+                }
+
+                const row = (l,t,y,u,tr) => `<div class="grid grid-cols-4 items-center border-b border-slate-50 last:border-0"><div class="col-span-1 text-slate-500 font-medium">${l}</div><div class="col-span-1 text-right font-bold text-slate-700">${t.toFixed(2)}${u}</div><div class="col-span-1 text-right text-slate-400">${y.toFixed(2)}${u}</div><div class="col-span-1 text-right text-[10px]">${tr}</div></div>`;
+                
+                cardsHTML += `
+                <div onclick="window.location.href='${uid}.html'" class="bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition cursor-pointer p-5 group">
+                    <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-slate-800 capitalize">${uid.replace('k','K').replace('v','V')}</h3><i class="fa-solid fa-chevron-right text-slate-300"></i></div>
+                    <div class="flex justify-between items-start mb-3"><span class="${statusClass}">${statusLabel}</span><span class="text-xs text-slate-500 font-medium">${guestName}</span></div>
+                    <div class="space-y-2 text-xs">
+                        ${row('Beban', wT, wY, ' W', getTrendHTML(diffW, pctW))}
+                        ${row('Arus', iT, iY, ' A', getTrendHTML(diffI, pctI))}
+                        ${row('Energi', kwhT, kwhY, ' k', getTrendHTML(diffK, pctK))}
+                        <div class="grid grid-cols-4 items-center pt-1"><div class="col-span-1 text-slate-500 font-medium">Biaya</div><div class="col-span-1 text-right font-bold text-emerald-600">${formatRupiah(costT)}</div><div class="col-span-1 text-right text-slate-400">${formatRupiah(costY)}</div><div class="col-span-1 text-right text-[10px]">${getTrendHTML(diffC, pctC)}</div></div>
+                    </div>
+                </div>`;
+            });
+
+            document.getElementById('unit-cards-container').innerHTML = cardsHTML;
+
+            const getP = (t, y) => y>0 ? ((t-y)/y)*100 : 0;
+            document.getElementById('total-watt-now').innerText = sum.w.t.toFixed(0); document.getElementById('total-watt-prev').innerText = sum.w.y.toFixed(0); document.getElementById('total-watt-trend').innerHTML = getTrendHTML(sum.w.t-sum.w.y, getP(sum.w.t, sum.w.y));
+            document.getElementById('total-amp-now').innerText = sum.i.t.toFixed(1); document.getElementById('total-amp-prev').innerText = sum.i.y.toFixed(1); document.getElementById('total-amp-trend').innerHTML = getTrendHTML(sum.i.t-sum.i.y, getP(sum.i.t, sum.i.y));
+            document.getElementById('total-kwh-now').innerText = sum.kwh.t.toFixed(2); document.getElementById('total-kwh-prev').innerText = sum.kwh.y.toFixed(2); document.getElementById('total-kwh-trend').innerHTML = getTrendHTML(sum.kwh.t-sum.kwh.y, getP(sum.kwh.t, sum.kwh.y));
+            document.getElementById('total-cost-now').innerText = formatRupiah(sum.cost.t); document.getElementById('total-cost-prev').innerText = formatRupiah(sum.cost.y); document.getElementById('total-cost-trend').innerHTML = getTrendHTML(sum.cost.t-sum.cost.y, getP(sum.cost.t, sum.cost.y));
+        }
+
+        window.saveTariff = () => { 
+            const val = parseFloat(document.getElementById('input-tariff').value); 
+            if(val) set(ref(db,'config/tariff'), val).then(() => alert("Tarif berhasil disimpan dan data diperbarui otomatis.")); 
+        }
+    </script>
+</body>
+</html>
