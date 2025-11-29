@@ -34,12 +34,10 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- AUTH CHECKER -->
     <div id="auth-loading"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div></div>
 
     <div id="navbar-container"></div>
     
-    <!-- ALERT SYSTEM -->
     <div id="global-alert" class="shadow-lg text-white"></div>
 
     <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
@@ -54,7 +52,6 @@
             </button>
         </div>
 
-        <!-- TABLE -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <table class="w-full text-sm text-left text-slate-500">
                 <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -73,14 +70,13 @@
 
     </main>
 
-    <!-- MODAL TAMBAH USER -->
     <div id="add-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4 transform transition-all scale-100">
-            <h3 class="text-lg font-bold text-slate-800 mb-4">Registrasi Penghuni Baru</h3>
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">Registrasi Penghuni Baru</h3>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">UID Kartu</label>
-                    <input type="text" id="input-uid" placeholder="Contoh: E2 A4 55 1B" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-800 outline-none uppercase">
+                    <input type="text" id="input-uid" placeholder="Contoh: E2 A4 55 1B" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-slate-800 outline-none uppercase disabled:bg-slate-100 disabled:text-slate-500">
                     <p class="text-[10px] text-slate-400 mt-1">Tempelkan kartu ke Reader Kamar 1 lalu copy UID dari Serial Monitor/Log.</p>
                 </div>
                 <div>
@@ -97,7 +93,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        // Added 'update' to imports
+        import { getDatabase, ref, onValue, set, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         // AUTH
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -198,6 +195,7 @@
                                 : `<span class="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-full font-bold border border-slate-200">Keluar (-)</span>`}
                         </td>
                         <td class="px-6 py-4 text-right">
+                            <button onclick="window.editUser('${uid}', '${user.name}')" class="text-slate-400 hover:text-emerald-500 transition p-2 rounded-full hover:bg-emerald-50 mr-2" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="window.deleteUser('${uid}')" class="text-slate-400 hover:text-rose-600 transition p-2 rounded-full hover:bg-rose-50" title="Hapus"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
@@ -206,22 +204,72 @@
             });
         });
 
-        window.openModal = () => document.getElementById('add-modal').classList.replace('hidden', 'flex');
+        // BUKA MODAL UNTUK REGISTRASI BARU
+        window.openModal = () => {
+            document.getElementById('modal-title').innerText = "Registrasi Penghuni Baru";
+            const inputUid = document.getElementById('input-uid');
+            const inputName = document.getElementById('input-name');
+            
+            // Reset Form
+            inputUid.value = "";
+            inputName.value = "";
+            
+            // Aktifkan UID untuk input
+            inputUid.disabled = false;
+            
+            document.getElementById('add-modal').classList.replace('hidden', 'flex');
+        };
+
+        // BUKA MODAL UNTUK EDIT NAMA
+        window.editUser = (uid, currentName) => {
+            document.getElementById('modal-title').innerText = "Edit Nama Penghuni";
+            const inputUid = document.getElementById('input-uid');
+            const inputName = document.getElementById('input-name');
+            
+            // Isi Form dengan data lama
+            inputUid.value = uid;
+            inputName.value = currentName;
+            
+            // Matikan input UID (tidak boleh diedit)
+            inputUid.disabled = true;
+            
+            document.getElementById('add-modal').classList.replace('hidden', 'flex');
+        }
+
         window.closeModal = () => document.getElementById('add-modal').classList.replace('flex', 'hidden');
 
         window.saveUser = () => {
-            const uid = document.getElementById('input-uid').value.trim().toUpperCase();
-            const name = document.getElementById('input-name').value.trim();
+            const uidInput = document.getElementById('input-uid');
+            const nameInput = document.getElementById('input-name');
+            
+            const uid = uidInput.value.trim().toUpperCase();
+            const name = nameInput.value.trim();
+            
+            // Cek apakah mode edit (input UID disabled)
+            const isEditMode = uidInput.disabled;
+
             if (!uid || !name) return alert("Isi UID dan Nama!");
             
-            set(ref(db, 'users/' + uid), {
-                name: name,
-                currentLocation: "-"
-            }).then(() => {
-                closeModal();
-                document.getElementById('input-uid').value = "";
-                document.getElementById('input-name').value = "";
-            }).catch(e => alert(e.message));
+            if (isEditMode) {
+                // UPDATE HANYA NAMA (Jangan reset lokasi)
+                update(ref(db, 'users/' + uid), {
+                    name: name
+                }).then(() => {
+                    closeModal();
+                }).catch(e => alert(e.message));
+
+            } else {
+                // CREATE USER BARU (Set lokasi default -)
+                set(ref(db, 'users/' + uid), {
+                    name: name,
+                    currentLocation: "-"
+                }).then(() => {
+                    closeModal();
+                    // Clear inputs not needed as modal will reset on open, but good practice
+                    uidInput.value = "";
+                    nameInput.value = "";
+                }).catch(e => alert(e.message));
+            }
         };
 
         window.deleteUser = (uid) => {
