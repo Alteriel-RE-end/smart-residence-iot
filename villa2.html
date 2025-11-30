@@ -158,7 +158,9 @@
             }
         });
 
-        document.getElementById('navbar-container').innerHTML = `<nav class="bg-white shadow-sm border-b sticky top-0 z-40"><div class="max-w-7xl mx-auto px-4 h-auto md:h-16 flex flex-col md:flex-row items-center justify-between py-2 md:py-0"><div class="flex items-center mb-2 md:mb-0 w-full md:w-auto justify-center md:justify-start"><i class="fa-solid fa-network-wired text-slate-800 text-xl mr-3"></i><a href="index.html" class="font-bold text-xl text-slate-900">SmartRes<span class="text-slate-400">IoT</span></a></div><div class="flex gap-2 overflow-x-auto w-full md:w-auto justify-center md:justify-end pb-1 md:pb-0 no-scrollbar"><a href="index.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Dashboard</a><a href="kamar1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kamar 1</a><a href="villa1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 1</a><a href="villa2.html" class="bg-slate-800 text-white px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 2</a><a href="manage.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kartu</a></div></div></nav>`;
+        // --- REVISI LOGO DISINI ---
+        // Menggunakan assets/logo.png sebagai gambar logo
+        document.getElementById('navbar-container').innerHTML = `<nav class="bg-white shadow-sm border-b sticky top-0 z-40"><div class="max-w-7xl mx-auto px-4 h-auto md:h-16 flex flex-col md:flex-row items-center justify-between py-2 md:py-0"><div class="flex items-center mb-2 md:mb-0 w-full md:w-auto justify-center md:justify-start"><a href="index.html"><img src="assets/logo.png" class="h-10 w-auto object-contain" alt="SKAELION"></a></div><div class="flex gap-2 overflow-x-auto w-full md:w-auto justify-center md:justify-end pb-1 md:pb-0 no-scrollbar"><a href="index.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Dashboard</a><a href="kamar1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kamar 1</a><a href="villa1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 1</a><a href="villa2.html" class="bg-slate-800 text-white px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 2</a><a href="manage.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kartu</a></div></div></nav>`;
 
         onValue(ref(db, 'system_alerts'), (snap) => {
             const alertData = snap.val();
@@ -308,7 +310,7 @@
         const historyQuery = query(ref(db, 'history/master'), limitToLast(HISTORY_FETCH_LIMIT));
 
         function initListeners() {
-            // MODIFIED: Menyimpan data history ke variabel agar bisa dipakai ulang saat tarif berubah
+            // MODIFIED: Simpan snapshot agar bisa hitung ulang
             onValue(historyQuery, (snap) => {
                 lastHistorySnapshot = snap;
                 processFirebaseHistory(snap);
@@ -353,7 +355,7 @@
                 });
             });
             
-            // MODIFIED: Trigger ulang perhitungan biaya jika tarif berubah
+            // MODIFIED: Trigger ulang jika tarif berubah
             onValue(ref(db, 'config/tariff'), (s) => { 
                 if(s.val()) {
                     currentTariff = parseFloat(s.val());
