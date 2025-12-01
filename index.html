@@ -37,7 +37,6 @@
             </div>
         </div>
 
-        <!-- GRID SUMMARY -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
             <div class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div class="bg-slate-800 px-6 py-4 border-b border-slate-700 flex justify-between items-center">
@@ -47,7 +46,6 @@
                 
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 divide-y md:divide-y-0 md:divide-x divide-slate-100 flex-grow items-center">
                     
-                    <!-- BEBAN -->
                     <div class="px-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Beban (W)</p>
                         <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-watt-now">0</span></div>
@@ -55,7 +53,6 @@
                         <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-watt-trend">--</span></div>
                     </div>
 
-                    <!-- ARUS -->
                     <div class="px-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Arus (A)</p>
                         <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-amp-now">0</span></div>
@@ -63,7 +60,6 @@
                         <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-amp-trend">--</span></div>
                     </div>
 
-                    <!-- ENERGI -->
                     <div class="px-2">
                         <p class="text-[10px] font-bold text-slate-400 uppercase mb-3">Tot. Rerata Energi (kWh)</p>
                         <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Hari Ini</span><span class="text-xl font-bold text-slate-800" id="total-kwh-now">0</span></div>
@@ -71,7 +67,6 @@
                         <div class="pt-2 border-t border-slate-100 flex justify-between items-center mt-2"><span class="text-[10px] text-slate-400">Selisih</span><span class="text-xs font-bold" id="total-kwh-trend">--</span></div>
                     </div>
 
-                    <!-- BIAYA -->
                     <div class="px-2 bg-emerald-50/50 rounded-lg -my-2 py-2 border border-emerald-100/50">
                         <p class="text-[10px] font-bold text-emerald-600 uppercase mb-3">Tot. Est. Biaya/Bln</p>
                         <div class="flex justify-between items-end"><span class="text-xs text-slate-500">Basis Hari Ini</span><span class="text-lg font-bold text-emerald-600" id="total-cost-now">0</span></div>
@@ -81,7 +76,6 @@
                 </div>
             </div>
 
-            <!-- CONFIG -->
             <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                 <div class="bg-slate-100 px-5 py-4 border-b border-slate-200 flex justify-between items-center"><h3 class="text-slate-700 font-bold text-sm"><i class="fa-solid fa-coins mr-2 text-yellow-500"></i> Tarif Listrik</h3><span class="text-[10px] text-slate-400 uppercase font-bold">Config</span></div>
                 <div class="p-5 flex flex-col justify-center flex-grow"><label class="text-xs text-slate-400 mb-1 block">Harga per kWh (Rp)</label><div class="flex items-end gap-2 mb-4"><input type="number" id="input-tariff" class="input-clean w-full text-xl font-bold text-slate-800 pb-1" placeholder="1444"><span class="text-sm text-slate-400 pb-1">/kWh</span></div><button onclick="saveTariff()" id="btn-save-tariff" class="w-full bg-slate-800 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-slate-700 transition shadow-sm flex justify-center items-center"><i class="fa-solid fa-save mr-2"></i> Simpan Tarif</button></div>
@@ -89,7 +83,6 @@
             </div>
         </div>
 
-        <!-- UNIT CARDS -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8" id="unit-cards-container"></div>
     </main>
 
@@ -104,7 +97,6 @@
 
         // DATA BUFFER
         let historyData = null;
-        let realtimeData = { kamar1: {}, villa1: {}, villa2: {} };
         let occupancyData = { kamar1: null, villa1: null, villa2: null };
 
         onAuthStateChanged(auth, (u) => { 
@@ -113,26 +105,16 @@
         });
         window.logout = () => signOut(auth).then(() => window.location.href = 'login.html');
         
-        // --- REVISI LOGO DISINI ---
-        // Menggunakan <img src="assets/logo.png"> dengan class h-10 w-auto
-        // Ini akan otomatis mengubah ukuran gambar 2190px menjadi tinggi 40px (proporsional)
         document.getElementById('navbar-container').innerHTML = `<nav class="bg-white shadow-sm border-b sticky top-0 z-40"><div class="max-w-7xl mx-auto px-4 h-auto md:h-16 flex flex-col md:flex-row items-center justify-between py-2 md:py-0"><div class="flex items-center mb-2 md:mb-0 w-full md:w-auto justify-center md:justify-start"><a href="index.html"><img src="assets/logo.png" class="h-10 w-auto object-contain" alt="SKAELION"></a></div><div class="flex gap-2 overflow-x-auto w-full md:w-auto justify-center md:justify-end pb-1 md:pb-0 no-scrollbar"><a href="index.html" class="bg-slate-800 text-white px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Dashboard</a><a href="kamar1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kamar 1</a><a href="villa1.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 1</a><a href="villa2.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Villa 2</a><a href="manage.html" class="text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition">Kartu</a></div></div></nav>`;
 
         const formatRupiah = (n) => "Rp " + n.toLocaleString('id-ID',{maximumFractionDigits:0});
         const getTrendHTML = (diff, pct) => diff > 0 ? `<span class="trend-up-bad">↑ ${Math.abs(pct).toFixed(0)}%</span>` : (diff < 0 ? `<span class="trend-down-good">↓ ${Math.abs(pct).toFixed(0)}%</span>` : `<span class="text-slate-400">-</span>`);
 
-        function getValueSafe(obj, key) {
-            if (!obj) return 0;
-            if (key === 'watt') return parseFloat(obj.watt || obj.w || 0);
-            if (key === 'i') return parseFloat(obj.i || obj.A || 0);
-            if (key === 'kwh') return parseFloat(obj.kwh || obj.E || 0);
-            return parseFloat(obj[key] || 0);
-        }
-
-        function calcAvg(dataArr, unitId, key) {
-            const valid = dataArr.map(d => d[unitId] ? getValueSafe(d[unitId], key) : 0).filter(v => v > 0);
-            if(valid.length === 0) return 0;
-            return valid.reduce((a,b)=>a+b,0) / valid.length;
+        // --- CALCAVG: LOGIKA YANG SAMA PERSIS DENGAN UNIT PAGE ---
+        // Menghapus 'smart check', hanya menerima key yang spesifik dan mengabaikan 0
+        function calcAvg(dataArr, key) {
+            const valid = dataArr.map(d => parseFloat(d[key]||0)).filter(v => v > 0);
+            return valid.length > 0 ? valid.reduce((a,b)=>a+b,0)/valid.length : 0;
         }
 
         function initApp() {
@@ -140,15 +122,13 @@
                 if(s.val()) { 
                     currentTariff = parseFloat(s.val()); 
                     document.getElementById('input-tariff').value = currentTariff; 
-                    console.log("Tarif updated:", currentTariff);
                     renderUI(); 
                 } 
             });
             
-            onValue(ref(db, 'monitoring'), (snap) => {
-                const d = snap.val();
-                if(d) { realtimeData = d; renderUI(); }
-            });
+            // Listener Monitoring dihapus untuk kalkulasi agar konsisten dengan unit yang hanya pakai history
+            // Jika Anda butuh realtimenya muncul terpisah, logikanya harus beda.
+            // Tapi untuk "Rerata Hari Ini" agar sinkron, kita hanya pakai history.
             
             const q = query(ref(db, 'history/master'), limitToLast(3000));
             onValue(q, (snap) => {
@@ -157,23 +137,13 @@
                 else document.getElementById('data-status').innerText = "No History";
             });
             
-            // MODIFIED: LOGIKA MAPPING USERS YANG LEBIH ROBUST
             onValue(ref(db, 'users'), (snap) => {
                 const users = snap.val() || {};
-                
-                // Reset Occupancy
                 occupancyData = { kamar1: null, villa1: null, villa2: null };
-                
-                // Iterasi semua user untuk mencari yang sedang check-in
                 Object.values(users).forEach(user => {
                     if (user.currentLocation && user.currentLocation !== "-") {
-                        // Normalisasi string lokasi: "Villa 2" -> "villa2"
                         let locKey = user.currentLocation.toLowerCase().replace(/\s/g, '');
-                        
-                        // Pastikan key valid (kamar1, villa1, villa2)
-                        if (occupancyData.hasOwnProperty(locKey)) {
-                            occupancyData[locKey] = user.name;
-                        }
+                        if (occupancyData.hasOwnProperty(locKey)) occupancyData[locKey] = user.name;
                     }
                 });
                 renderUI();
@@ -192,61 +162,79 @@
         window.cleanupData = async () => { if(confirm("Hapus history lama (>5000)?")) { const s = await get(query(ref(db,'history/master'), orderByKey())); const k=Object.keys(s.val()||{}); if(k.length>5000){ const u={}; for(let i=0;i<k.length-5000;i++)u[`history/master/${k[i]}`]=null; await update(ref(db),u); alert("Selesai"); } else alert("Data aman."); } };
 
         function renderUI() {
-            let arr = [];
+            let globalHistory = [];
             let useHistory = false;
-            if (historyData) { arr = Object.values(historyData).sort((a,b)=>a.ts-b.ts); useHistory = arr.length > 0; }
+            
+            // Ambil Global History
+            if (historyData) { 
+                globalHistory = Object.values(historyData).sort((a,b)=>a.ts-b.ts); 
+                useHistory = globalHistory.length > 0; 
+            }
 
-            document.getElementById('data-status').innerText = useHistory ? "Source: History" : "Source: Realtime";
-            document.getElementById('data-status').className = useHistory ? "text-xs text-emerald-100 bg-emerald-600 px-2 py-1 rounded" : "text-xs text-rose-100 bg-rose-500 px-2 py-1 rounded";
+            document.getElementById('data-status').innerText = useHistory ? "Source: History" : "Waiting Data...";
+            document.getElementById('data-status').className = useHistory ? "text-xs text-emerald-100 bg-emerald-600 px-2 py-1 rounded" : "text-xs text-slate-100 bg-slate-500 px-2 py-1 rounded";
             
             const now = new Date();
             const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
             const startYesterday = startToday - 86400;
-            const todayArr = arr.filter(d => (d.ts||0) >= startToday);
-            const yestArr = arr.filter(d => (d.ts||0) >= startYesterday && (d.ts||0) < startToday);
 
             const sum = { w:{t:0,y:0}, i:{t:0,y:0}, kwh:{t:0,y:0}, cost:{t:0,y:0} };
             let cardsHTML = '';
 
+            // LOOPING PER UNIT (Simulasi Logic Unit Page)
             ['kamar1', 'villa1', 'villa2'].forEach(uid => {
                 let wT = 0, wY = 0, iT = 0, iY = 0, kwhT = 0, kwhY = 0;
 
-                if (useHistory && todayArr.length > 0) {
-                    wT = calcAvg(todayArr, uid, 'watt');
-                    wY = calcAvg(yestArr, uid, 'watt');
-                    iT = calcAvg(todayArr, uid, 'i');
-                    iY = calcAvg(yestArr, uid, 'i');
-                    kwhT = calcAvg(todayArr, uid, 'kwh');
-                    kwhY = calcAvg(yestArr, uid, 'kwh');
+                if (useHistory) {
+                    // LANGKAH PENTING: Isolasi data unit ini saja dari global history
+                    // Ini meniru: const dataArr = Object.values(rawHistory).map(d => ({...d[unitId]}))
+                    const unitDataAll = globalHistory.map(d => ({
+                        ts: d.ts,
+                        ...(d[uid] || {}) // Ambil objek spesifik unit (kamar1/villa1), abaikan yang lain
+                    }));
+
+                    // Split Hari Ini vs Kemarin (Logic Unit)
+                    const todayData = unitDataAll.filter(d => d.ts >= startToday);
+                    const yestData = unitDataAll.filter(d => d.ts >= startYesterday && d.ts < startToday);
+
+                    // Hitung Rata-rata menggunakan data yang sudah terisolasi
+                    // Key yang digunakan HARUS sama dengan di kamar1.html: 'watt', 'i', 'kwh'
+                    // Tidak ada lagi pencampuran dengan realtime fallback jika 0
+                    wT = calcAvg(todayData, 'watt');
+                    wY = calcAvg(yestData, 'watt');
+                    
+                    iT = calcAvg(todayData, 'i');
+                    iY = calcAvg(yestData, 'i');
+                    
+                    kwhT = calcAvg(todayData, 'kwh');
+                    kwhY = calcAvg(yestData, 'kwh');
                 }
                 
-                if (wT === 0 && realtimeData[uid]) wT = getValueSafe(realtimeData[uid], 'watt');
-                if (iT === 0 && realtimeData[uid]) iT = getValueSafe(realtimeData[uid], 'i');
-                if (kwhT === 0 && realtimeData[uid]) kwhT = getValueSafe(realtimeData[uid], 'kwh');
-
+                // Hitung Biaya & Tren
                 const costT = kwhT * 30 * currentTariff;
                 const costY = kwhY * 30 * currentTariff;
 
+                // Akumulasi ke Total Global
                 sum.w.t += wT; sum.w.y += wY;
                 sum.i.t += iT; sum.i.y += iY;
                 sum.kwh.t += kwhT; sum.kwh.y += kwhY;
                 sum.cost.t += costT; sum.cost.y += costY;
 
+                // Hitung Persentase Tren Per Unit
                 const diffW = wT - wY; const pctW = wY>0 ? (diffW/wY)*100 : 0;
                 const diffI = iT - iY; const pctI = iY>0 ? (diffI/iY)*100 : 0;
                 const diffK = kwhT - kwhY; const pctK = kwhY>0 ? (diffK/kwhY)*100 : 0;
                 const diffC = costT - costY; const pctC = costY>0 ? (diffC/costY)*100 : 0;
 
-                // MODIFIED: LOGIKA STATUS & WARNA YANG ROBUST
+                // Status Okupansi
                 let statusLabel = "AVAILABLE";
                 let statusClass = "text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full font-bold";
                 let guestName = "-";
 
-                // Cek mapping occupancyData (dari node users)
                 if (occupancyData[uid]) { 
                     statusLabel = "OCCUPIED"; 
                     statusClass = "text-[10px] bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full font-bold"; 
-                    guestName = occupancyData[uid]; // Menampilkan Nama Tamu
+                    guestName = occupancyData[uid];
                 }
 
                 const row = (l,t,y,u,tr) => `<div class="grid grid-cols-4 items-center border-b border-slate-50 last:border-0"><div class="col-span-1 text-slate-500 font-medium">${l}</div><div class="col-span-1 text-right font-bold text-slate-700">${t.toFixed(2)}${u}</div><div class="col-span-1 text-right text-slate-400">${y.toFixed(2)}${u}</div><div class="col-span-1 text-right text-[10px]">${tr}</div></div>`;
