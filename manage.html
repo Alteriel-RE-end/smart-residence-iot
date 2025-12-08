@@ -52,6 +52,40 @@
             </button>
         </div>
 
+        <!-- PANEL STATUS KAMAR (BARU: TOMBOL RESET) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <!-- KAMAR 1 -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Status Kamar 1</h3>
+                    <div id="status-kamar1" class="mt-2 text-sm font-medium text-slate-400">Memuat...</div>
+                </div>
+                <button onclick="window.resetRoom('kamar1')" class="mt-4 w-full border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs py-2 rounded-lg transition flex justify-center items-center">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Reset Paksa
+                </button>
+            </div>
+            <!-- VILLA 1 -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Status Villa 1</h3>
+                    <div id="status-villa1" class="mt-2 text-sm font-medium text-slate-400">Memuat...</div>
+                </div>
+                <button onclick="window.resetRoom('villa1')" class="mt-4 w-full border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs py-2 rounded-lg transition flex justify-center items-center">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Reset Paksa
+                </button>
+            </div>
+            <!-- VILLA 2 -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-500 uppercase">Status Villa 2</h3>
+                    <div id="status-villa2" class="mt-2 text-sm font-medium text-slate-400">Memuat...</div>
+                </div>
+                <button onclick="window.resetRoom('villa2')" class="mt-4 w-full border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs py-2 rounded-lg transition flex justify-center items-center">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> Reset Paksa
+                </button>
+            </div>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
             <table class="w-full text-sm text-left text-slate-500">
                 <thead class="text-xs text-slate-700 uppercase bg-slate-50 border-b border-slate-200">
@@ -168,6 +202,24 @@
         window.dismissAlert = () => set(ref(db, 'system_alerts/active'), false);
 
 
+        // [BARU] LOGIKA MONITOR STATUS KAMAR
+        const updateRoomUI = (id, elId) => {
+            onValue(ref(db, `room_status/${id}`), (snap) => {
+                const val = snap.val();
+                const el = document.getElementById(elId);
+                // Jika null/kosong = Available, jika ada isi = Terisi
+                if(!val) {
+                    el.innerHTML = `<span class="text-emerald-500 flex items-center gap-1 font-bold"><i class="fa-solid fa-check-circle"></i> KOSONG</span>`;
+                } else {
+                    el.innerHTML = `<span class="text-rose-500 flex items-center gap-1 font-bold"><i class="fa-solid fa-lock"></i> TERISI (${val})</span>`;
+                }
+            });
+        }
+        updateRoomUI('kamar1', 'status-kamar1');
+        updateRoomUI('villa1', 'status-villa1');
+        updateRoomUI('villa2', 'status-villa2');
+
+
         // Logic CRUD Table
         const tableBody = document.getElementById('user-table-body');
 
@@ -272,6 +324,7 @@
         };
 
         // [UPDATE] Logika Hapus User (Membersihkan Room Status agar tidak ghosting)
+        // PERBAIKAN: Menggunakan set(..., null) alih-alih set(..., "") agar data terhapus total
         window.deleteUser = (uid) => {
             if(confirm(`Yakin hapus akses untuk UID: ${uid}?`)) {
                 const dbRef = ref(db);
@@ -289,8 +342,8 @@
                             else if(userData.currentLocation === "Villa 2") unitId = "villa2";
                             
                             if(unitId) {
-                                // Reset status kamar jadi kosong
-                                set(ref(db, `room_status/${unitId}`), "");
+                                // Reset status kamar jadi NULL (Hapus Node)
+                                set(ref(db, `room_status/${unitId}`), null);
                                 console.log(`Auto-checkout user dari ${unitId} saat penghapusan.`);
                             }
                         }
@@ -311,10 +364,14 @@
         };
 
         // [TAMBAHAN] Fungsi Reset Manual untuk Admin (via Console jika darurat)
-        // Cara pakai: Buka Inspect Element -> Console -> ketik window.resetRoom('kamar1')
+        // Cara pakai: Klik tombol Reset Paksa di UI
+        // PERBAIKAN: Menggunakan null agar node terhapus sempurna
         window.resetRoom = (unitId) => {
-            set(ref(db, `room_status/${unitId}`), "")
-            .then(() => alert(`Status ${unitId} berhasil di-reset paksa.`));
+            if(confirm(`Yakin ingin mereset paksa status ${unitId} menjadi KOSONG? \n\nGunakan fitur ini hanya jika status kamar error (terkunci tapi tidak ada orang).`)) {
+                set(ref(db, `room_status/${unitId}`), null)
+                .then(() => alert(`Sukses! Status ${unitId} berhasil di-reset menjadi kosong.`))
+                .catch(e => alert("Gagal: " + e.message));
+            }
         }
     </script>
 </body>
